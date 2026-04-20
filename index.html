@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<!-- Plik zrobiony prosto i czytelnie. Komentarze sa specjalnie krotkie. -->
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kalosdle — Start</title>
+<link rel="stylesheet" href="styl.css">
+<link rel="icon" type="image/png" href="ikona.png">
+<link rel="shortcut icon" href="ikona.ico">
+</head>
+<!-- Tlo Pokedexu i glowna zawartosc strony -->
+<body class="page-home">
+<div class="kalos-bg"><div class="kalos-grid" id="kalos-grid"></div></div>
+<div class="page">
+
+<!-- Gorny naglowek strony -->
+<header class="simple-head">
+  <a class="logo" href="index.html">Kalosdle</a>
+  <div class="logo-sub">Pokédex Kalos</div>
+</header>
+
+<!-- Krotki opis strony -->
+<section class="hero">
+  <div class="meta">Generacja 6 · Kalos</div>
+  <h1>Codziennie zgaduj Pokémona z Kalos!</h1>
+  <p>Wybierz tryb poniżej. Każde odświeżenie losuje nowego Pokémona.</p>
+</section>
+
+<!-- Kafelki do przejscia miedzy trybami -->
+<section class="menu-stack">
+  <a class="menu-card" href="klasyczny.html">
+    <div class="menu-title">KLASYCZNY</div>
+    <div class="menu-strip">
+      <div class="menu-icon"><img src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%2064%2064%27%3E%0A%3Ccircle%20cx%3D%2732%27%20cy%3D%2732%27%20r%3D%2728%27%20fill%3D%27%230c0c0c%27/%3E%0A%3Cpath%20d%3D%27M31%2013c9%200%2014%204%2014%2011%200%207-6%209-9%2012-2%202-3%204-3%207h-6c0-5%201-8%204-11%203-3%208-4%208-8%200-3-2-5-7-5-4%200-8%202-11%205l-4-4c4-5%209-7%2014-7z%27%20fill%3D%27%23f5f5f5%27/%3E%0A%3Ccircle%20cx%3D%2730%27%20cy%3D%2750%27%20r%3D%274%27%20fill%3D%27%23f5f5f5%27/%3E%0A%3C/svg%3E" alt="Unown znak zapytania"></div>
+      <div class="menu-pill">Wskazówki po każdej próbie</div>
+    </div>
+  </a>
+
+  <a class="menu-card" href="opis.html">
+    <div class="menu-title">OPIS</div>
+    <div class="menu-strip">
+      <div class="menu-icon"><img src="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%2064%2064%27%3E%0A%3Crect%20x%3D%2710%27%20y%3D%278%27%20width%3D%2744%27%20height%3D%2748%27%20rx%3D%276%27%20fill%3D%27%23ff5f7c%27/%3E%0A%3Crect%20x%3D%2716%27%20y%3D%2714%27%20width%3D%2714%27%20height%3D%2736%27%20fill%3D%27%23d93258%27/%3E%0A%3Crect%20x%3D%2734%27%20y%3D%2714%27%20width%3D%2714%27%20height%3D%2712%27%20fill%3D%27%23ffffff%27/%3E%0A%3Crect%20x%3D%2734%27%20y%3D%2730%27%20width%3D%2714%27%20height%3D%2720%27%20fill%3D%27%23ffd55a%27/%3E%0A%3Crect%20x%3D%2722%27%20y%3D%2720%27%20width%3D%272%27%20height%3D%2724%27%20fill%3D%27%23fff%27/%3E%0A%3Crect%20x%3D%2738%27%20y%3D%2718%27%20width%3D%276%27%20height%3D%272%27%20fill%3D%27%232f5e87%27/%3E%0A%3Crect%20x%3D%2738%27%20y%3D%2734%27%20width%3D%276%27%20height%3D%272%27%20fill%3D%27%232f5e87%27/%3E%0A%3C/svg%3E" alt="Książka"></div>
+      <div class="menu-pill">Z opisem z Pokédexu</div>
+    </div>
+  </a>
+
+  <a class="menu-card" href="sylwetka.html">
+    <div class="menu-title">SYLWETKA</div>
+    <div class="menu-strip">
+      <div class="menu-icon"><img class="shadow" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png" alt="Cień Pikachu"></div>
+      <div class="menu-pill">Z cieniem i przybliżaniem obrazka</div>
+    </div>
+  </a>
+</section>
+
+<div class="footer-space"></div>
+
+<script>
+// Ten skrypt obsluguje wspolne rzeczy na stronie
+// Tutaj jest glowny adres do Pokemon API
+const API = 'https://pokeapi.co/api/v2';
+const $ = (id) => document.getElementById(id);
+const spriteUrl = (id) => 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/' + id + '.png';
+const artUrl = (id) => 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/' + id + '.png';
+const state = { names: [], cache: {}, target: '', targetData: null, guesses: [] };
+
+function cap(text){
+  return String(text || '').replace(/-/g,' ').replace(/\b\w/g, s => s.toUpperCase());
+}
+function clean(text){
+  return String(text || '').trim().toLowerCase().replace(/\s+/g,'-');
+}
+function day(offset=0){
+  const d = new Date();
+  d.setHours(0,0,0,0);
+  d.setDate(d.getDate()+offset);
+  return Math.floor(d.getTime()/86400000);
+}
+function key(mode){
+  return 'kalosdle_' + mode + '_' + day();
+}
+function save(mode){
+  return;
+}
+function load(mode){
+  return [];
+}
+function getId(url){
+  return Number(url.split('/').filter(Boolean).pop());
+}
+const TYPE_PL = {normal:'Normalny',fire:'Ogień',water:'Woda',electric:'Elektryczny',grass:'Trawa',ice:'Lód',fighting:'Walka',poison:'Trucizna',ground:'Ziemia',flying:'Latający',psychic:'Psychiczny',bug:'Robak',rock:'Kamień',ghost:'Duch',dragon:'Smok',dark:'Mrok',steel:'Stal',fairy:'Baśniowy'};
+const COLOR_PL = {black:'Czarny',blue:'Niebieski',brown:'Brązowy',gray:'Szary',green:'Zielony',pink:'Różowy',purple:'Fioletowy',red:'Czerwony',white:'Biały',yellow:'Żółty'};
+const evoCache = {};
+function plType(name){ return TYPE_PL[name] || cap(name || '—'); }
+function plColor(name){ return COLOR_PL[name] || cap(name || '—'); }
+function findEvolutionStage(node, target, stage=1){
+  if(!node) return 0;
+  if(node.species && node.species.name === target) return stage;
+  for(const next of (node.evolves_to || [])){
+    const found = findEvolutionStage(next, target, stage + 1);
+    if(found) return found;
+  }
+  return 0;
+}
+async function getEvolutionStage(species){
+  const chainUrl = species && species.evolution_chain && species.evolution_chain.url;
+  if(!chainUrl) return 1;
+  if(evoCache[chainUrl]) return evoCache[chainUrl][species.name] || 1;
+  const chainData = await fetch(chainUrl).then(r => r.json());
+  const names = {};
+  function walk(node, stage=1){
+    if(node && node.species) names[node.species.name] = Math.min(stage, 3);
+    for(const next of ((node && node.evolves_to) || [])) walk(next, stage + 1);
+  }
+  walk(chainData.chain, 1);
+  evoCache[chainUrl] = names;
+  return names[species.name] || 1;
+}
+async function translateToPolish(text){
+  const raw = String(text || 'Brak opisu.').replace(/[\n\f]+/g,' ').trim();
+  if(!raw) return 'Brak opisu.';
+  try{
+    const url = 'https://api.mymemory.translated.net/get?q=' + encodeURIComponent(raw) + '&langpair=en|pl';
+    const data = await fetch(url).then(r => r.json());
+    const translated = data && data.responseData && data.responseData.translatedText ? String(data.responseData.translatedText) : '';
+    if(translated){
+      return translated.replace(/&quot;/g,'\"').replace(/\s+/g,' ').trim();
+    }
+  }catch(e){}
+  return raw;
+}
+function setStatus(text, cls=''){
+  const el = $('status');
+  if(!el) return;
+  el.className = 'status ' + cls;
+  el.textContent = text;
+}
+function setupSettings(){
+  const btn = $('gear-btn');
+  const box = $('settings-box');
+  if(!btn || !box) return;
+  btn.onclick = () => box.classList.toggle('show');
+}
+async function getKalos(){
+  const data = await fetch(API + '/generation/6').then(r => r.json());
+  return data.pokemon_species
+    .sort((a,b) => getId(a.url) - getId(b.url))
+    .map(x => ({ name:x.name, id:getId(x.url) }));
+}
+// Rysowanie tla z kafelkami Pokemonow
+function buildWall(){
+  const grid = $('kalos-grid');
+  if(!grid) return;
+  grid.innerHTML = '';
+  const perRow = window.innerWidth <= 520 ? 4 : window.innerWidth <= 680 ? 5 : window.innerWidth <= 900 ? 8 : window.innerWidth <= 1100 ? 10 : 12;
+  const rowsByScreen = Math.ceil(window.innerHeight / 108) + 1;
+  const rowsByMons = Math.ceil(state.names.length / perRow);
+  const total = perRow * Math.max(rowsByScreen, rowsByMons);
+  for(let i = 0; i < total; i++){
+    const mon = state.names[i % state.names.length];
+    const tile = document.createElement('div');
+    tile.className = 'kalos-tile';
+    tile.innerHTML = '<div class="dex-no">#' + String(mon.id).padStart(3,'0') + '</div><img alt="" src="' + spriteUrl(mon.id) + '">';
+    grid.appendChild(tile);
+  }
+}
+window.addEventListener('resize', () => {
+  if(state.names && state.names.length) buildWall();
+});
+function pickRandomName(modeIndex){
+  const pool = state.names.filter((_, i) => i % 3 === modeIndex);
+  const list = pool.length ? pool : state.names;
+  return list[Math.floor(Math.random() * list.length)].name;
+}
+
+function habitatFrom(pokemon, species){
+  const types = pokemon.types.map(x => x.type.name);
+  if(species.is_legendary || species.is_mythical) return 'Rzadkie';
+  if(types.includes('water')) return 'Morze';
+  if(types.includes('flying') || types.includes('dragon')) return 'Góry';
+  if(types.includes('grass') || types.includes('bug')) return 'Las';
+  if(types.includes('ground') || types.includes('rock') || types.includes('steel')) return 'Jaskinie';
+  return 'Użytki zielone';
+}
+// Pobiera dane o konkretnym Pokemonie
+async function getDetails(name){
+  if(state.cache[name]) return state.cache[name];
+  const [pokemon, species] = await Promise.all([
+    fetch(API + '/pokemon/' + name).then(r => r.json()),
+    fetch(API + '/pokemon-species/' + name).then(r => r.json())
+  ]);
+  const englishFlavor = (species.flavor_text_entries || []).find(x => x.language.name === 'en') ||
+                        (species.flavor_text_entries || []).find(x => x.language.name === 'fr') ||
+                        (species.flavor_text_entries || [])[0] ||
+                        { flavor_text: 'Brak opisu.' };
+  const evolution = await getEvolutionStage(species);
+  const data = {
+    id: pokemon.id,
+    name: pokemon.name,
+    sprite: pokemon.sprites.front_default || spriteUrl(pokemon.id),
+    art: (pokemon.sprites.other && pokemon.sprites.other['official-artwork'] && pokemon.sprites.other['official-artwork'].front_default) || artUrl(pokemon.id),
+    type1: pokemon.types[0] ? pokemon.types[0].type.name : '',
+    type2: pokemon.types[1] ? pokemon.types[1].type.name : '',
+    color: species.color ? species.color.name : 'unknown',
+    height: pokemon.height / 10,
+    weight: pokemon.weight / 10,
+    habitat: habitatFrom(pokemon, species),
+    flavor: String(englishFlavor.flavor_text || 'Brak opisu.').replace(/[\n\f]+/g, ' '),
+    evolution,
+    legendary: species.is_legendary || species.is_mythical
+  };
+  state.cache[name] = data;
+  return data;
+}
+// Podpowiedzi w inpucie po wpisaniu litery
+function buildSuggestions(inputId, boxId, onPick){
+  const input = $(inputId);
+  const box = $(boxId);
+  function hide(){ box.classList.remove('show'); box.innerHTML=''; }
+  function render(){
+    const q = clean(input.value);
+    if(q.length < 1){ hide(); return; }
+    const hits = state.names.filter(mon => mon.name.startsWith(q)).slice(0, 12);
+    if(!hits.length){ hide(); return; }
+    box.innerHTML = '';
+    hits.forEach(mon => {
+      const row = document.createElement('div');
+      row.className = 'suggest-item';
+      row.innerHTML = '<img src="' + spriteUrl(mon.id) + '" alt="' + cap(mon.name) + '"><div class="name">' + cap(mon.name) + '</div>';
+      row.onclick = () => {
+        input.value = cap(mon.name);
+        hide();
+        if(onPick) onPick(mon.name);
+      };
+      box.appendChild(row);
+    });
+    box.classList.add('show');
+  }
+  input.addEventListener('input', render);
+  input.addEventListener('focus', render);
+  document.addEventListener('click', (e) => {
+    if(!box.contains(e.target) && e.target !== input) hide();
+  });
+}
+</script>
+
+<script>
+(async function(){
+  state.names = await getKalos();
+  buildWall();
+})();
+</script>
+</body></html>

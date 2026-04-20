@@ -1,0 +1,457 @@
+/* Prosty styl do calej strony. Nic tu nie jest za bardzo przekombinowane. */
+
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+/* Kolory i podstawowe zmienne */
+:root{
+  --bg1:#8dd0ff;
+  --bg2:#6fb6ea;
+  --panel:#2f5e87;
+  --gold:#e5b33c;
+  --cream:#ece7cf;
+  --green:#3f5f28;
+  --pill:#7ce6ae;
+  --pill-dark:#65d699;
+  --text:#f7f7f7;
+  --ok:#54d98b;
+  --partial:#ecd33e;
+  --bad:#f56e42;
+  --shadow:0 14px 24px rgba(0,0,0,.18);
+  --bg-gap:10px;
+  --bg-radius:14px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;min-height:100%}
+body{
+  font-family:'Press Start 2P', monospace;
+  color:var(--text);
+  background:linear-gradient(180deg,var(--bg1),var(--bg2));
+  min-height:100vh;
+  overflow-x:hidden;
+}
+a{color:inherit}
+img{max-width:100%}
+.hidden{display:none !important}
+
+/* Tlo z kafelkami Pokedexu */
+.kalos-bg{
+  position:fixed;
+  inset:0;
+  z-index:0;
+  pointer-events:none;
+  overflow:hidden;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,0) 26%),
+    linear-gradient(180deg, rgba(76,129,177,.11), rgba(76,129,177,0) 58%);
+}
+.kalos-grid{
+  --cols:12;
+  position:absolute;
+  inset:0;
+  display:grid;
+  grid-template-columns:repeat(var(--cols), minmax(0, 1fr));
+  grid-auto-rows:clamp(96px, 7.6vw, 136px);
+  gap:var(--bg-gap);
+  padding:10px;
+  align-content:start;
+}
+.kalos-tile{
+  min-width:0;
+  min-height:0;
+  border-radius:var(--bg-radius);
+  border:2px solid rgba(255,255,255,.2);
+  background:linear-gradient(180deg, rgba(152,222,255,.17), rgba(48,116,176,.16));
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.16),
+    inset 0 0 0 1px rgba(255,255,255,.05);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  position:relative;
+  overflow:hidden;
+}
+.kalos-tile::after{
+  content:'';
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.04);
+}
+.kalos-tile img{
+  width:46px;
+  height:46px;
+  object-fit:contain;
+  opacity:.28;
+  filter:saturate(.82);
+  image-rendering:pixelated;
+  margin-top:12px;
+}
+.kalos-tile .dex-no{
+  position:absolute;
+  top:8px;
+  left:8px;
+  font-size:10px;
+  color:rgba(255,255,255,.72);
+  letter-spacing:1px;
+}
+
+/* Srodkowa kolumna z cala trescia */
+.page{
+  position:relative;
+  z-index:1;
+  width:min(100%,960px);
+  margin:0 auto;
+  padding:12px 10px 28px;
+}
+/* Prosty naglowek z napisem Kalosdle */
+.simple-head{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+  margin:0 auto 18px;
+  text-align:center;
+}
+.logo{
+  display:inline-block;
+  text-decoration:none;
+  color:#ffd534;
+  margin-top:14px;
+  font-size:clamp(44px,8vw,88px);
+  line-height:.92;
+  letter-spacing:-6px;
+  font-style:italic;
+  transform:skew(-8deg) rotate(-2deg);
+  text-shadow:
+    5px 0 #2d5cae, -5px 0 #2d5cae, 0 5px #2d5cae, 0 -5px #2d5cae,
+    4px 4px 0 rgba(255,255,255,.88), -2px -2px 0 rgba(255,255,255,.35);
+}
+.logo-sub{
+  font-size:12px;
+  line-height:1.5;
+  letter-spacing:1px;
+  color:#f3f8ff;
+  text-align:center;
+  margin-top:-2px;
+}
+.sub-nav{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:10px;
+  margin:0 auto 18px;
+}
+.sub-link{
+  text-decoration:none;
+  color:#111;
+  background:rgba(236,231,207,.97);
+  border:5px solid var(--green);
+  border-radius:18px;
+  padding:12px 16px;
+  min-width:150px;
+  text-align:center;
+  box-shadow:var(--shadow);
+  font-size:11px;
+  line-height:1.4;
+  transition:transform .15s ease;
+}
+.sub-link:hover{transform:translateY(-1px)}
+
+.hero,.panel,.menu-panel{
+  background:rgba(47,94,135,.96);
+  border:6px solid var(--gold);
+  border-radius:26px;
+  box-shadow:var(--shadow);
+}
+.hero{
+  padding:18px 20px;
+  text-align:center;
+  margin-bottom:18px;
+}
+.hero h1,.big-title{
+  margin:8px 0 14px;
+  font-size:clamp(24px,5vw,52px);
+  line-height:1.4;
+  text-align:center;
+}
+.hero p,.subtext,.status,.note,.meta,.answer-meta,.guess-history-title{
+  font-size:11px;
+  line-height:1.9;
+}
+.meta,.status,.answer-name,.answer-meta,.guess-history-title{text-align:center}
+.hero p{max-width:780px;margin:0 auto}
+.subtext{text-align:center;max-width:760px;margin-left:auto;margin-right:auto}
+.note{text-align:center;max-width:640px;margin:0 auto 12px}
+.panel{padding:20px 18px}
+.game-box{max-width:1060px;margin:0 auto}
+.meta{color:rgba(255,255,255,.78);margin-bottom:14px}
+
+/* Kafelki na stronie startowej */
+.menu-stack{max-width:680px;margin:0 auto;display:grid;gap:22px}
+.menu-card{
+  text-decoration:none;
+  color:#111;
+  background:rgba(236,231,207,.97);
+  border:6px solid var(--green);
+  border-radius:24px;
+  padding:18px;
+  display:block;
+  box-shadow:var(--shadow);
+}
+.menu-title{text-align:center;font-size:22px;margin-bottom:16px}
+.menu-strip{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  background:#57703f;
+  border-radius:999px;
+  padding:10px;
+}
+.menu-icon{
+  width:52px;
+  height:52px;
+  border-radius:999px;
+  flex:0 0 52px;
+  background:linear-gradient(180deg,#72b8ff,#4c76d8);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+}
+.menu-icon img{width:32px;height:32px;object-fit:contain;image-rendering:pixelated}
+.menu-icon img.shadow{filter:brightness(0)}
+.menu-pill{
+  flex:1;
+  background:linear-gradient(180deg,var(--pill),var(--pill-dark));
+  border-radius:999px;
+  padding:14px 16px;
+  text-align:center;
+  color:#15331d;
+  font-size:11px;
+  line-height:1.5;
+}
+.footer-space{height:10px}
+
+/* Wyszukiwarka i lista podpowiedzi */
+.search-wrap{position:relative;max-width:640px;width:min(100%,640px);margin:0 auto 16px}
+.search-row{display:grid;grid-template-columns:1fr 72px;gap:10px}
+.search-input{
+  width:100%;
+  height:64px;
+  border:none;
+  outline:none;
+  border-radius:999px;
+  padding:0 24px;
+  background:#f2f2f2;
+  color:#1a1a1a;
+  font-family:'Press Start 2P', monospace;
+  font-size:13px;
+  box-shadow:0 0 0 6px rgba(255,255,255,.08), 0 8px 18px rgba(0,0,0,.12);
+}
+.search-input::placeholder{color:#777}
+.search-btn{
+  border:none;
+  border-radius:999px;
+  background:#21496b;
+  color:#ffd23b;
+  font-family:'Press Start 2P', monospace;
+  font-size:26px;
+  cursor:pointer;
+  box-shadow:0 8px 18px rgba(0,0,0,.14);
+}
+.suggest-box{
+  position:absolute;
+  left:0;
+  right:0;
+  top:74px;
+  z-index:20;
+  display:none;
+  max-height:320px;
+  overflow:auto;
+  background:#e8ecef;
+  color:#111;
+  border:3px solid #111;
+  border-radius:0 0 18px 18px;
+  box-shadow:14px 14px 0 rgba(0,0,0,.26);
+}
+.suggest-box.show{display:block;animation:fadeIn .18s ease}
+.suggest-item{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  cursor:pointer;
+  padding:12px 14px;
+  background:#eef1f2;
+  border-bottom:1px solid rgba(0,0,0,.08);
+}
+.suggest-item:last-child{border-bottom:none}
+.suggest-item:hover{background:#f7f8f9}
+.suggest-item img{
+  width:56px;
+  height:56px;
+  object-fit:contain;
+  image-rendering:pixelated;
+  background:#fff;
+  border:3px solid #111;
+  border-radius:10px;
+}
+
+.board{overflow-x:auto;padding-bottom:6px}
+.board-head,.board-row{
+  width:990px;
+  display:grid;
+  grid-template-columns:110px 1fr 1fr 1.2fr 1fr .8fr 1fr 1fr;
+  gap:10px;
+  align-items:stretch;
+}
+.board-head{margin-bottom:10px}
+.head-cell{
+  font-size:11px;
+  line-height:1.6;
+  text-align:center;
+  padding:0 4px 6px;
+  border-bottom:4px solid rgba(255,255,255,.9);
+}
+.board-row{margin-bottom:12px;animation:fadeIn .25s ease}
+.cell{
+  min-height:84px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  padding:12px 8px;
+  background:var(--bad);
+  color:#111;
+  border-radius:12px;
+  border:4px solid #123756;
+  line-height:1.5;
+  font-size:11px;
+}
+.cell.exact{background:var(--ok)}
+.cell.partial{background:var(--partial)}
+.icon-cell img{
+  width:58px;
+  height:58px;
+  object-fit:contain;
+  image-rendering:pixelated;
+  background:#fff;
+  border:3px solid #111;
+  border-radius:8px;
+}
+.legend{
+  max-width:420px;
+  margin:14px auto 10px;
+  background:rgba(236,231,207,.98);
+  color:#111;
+  border:5px solid #111;
+  border-radius:8px;
+  padding:16px 14px 18px;
+}
+.legend-title{font-size:14px;margin-bottom:12px;text-align:center}
+.legend-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.legend-item{font-size:10px;line-height:1.6;text-align:center}
+.legend-dot{width:34px;height:34px;border-radius:8px;margin:0 auto 8px}
+.legend-dot.ok{background:var(--ok)}
+.legend-dot.partial{background:var(--partial)}
+.legend-dot.bad{background:var(--bad)}
+
+.result-box,
+.guess-history{
+  max-width:520px;
+  margin:14px auto 0;
+  padding:16px 18px;
+  border-radius:20px;
+  background:rgba(47,94,135,.98);
+  border:4px solid rgba(255,255,255,.12);
+  box-shadow:0 10px 20px rgba(0,0,0,.12);
+}
+.answer-name{font-size:18px;color:#8df3a5;line-height:1.7}
+.answer-meta{color:rgba(255,255,255,.84)}
+.guess-history-title{margin-bottom:12px}
+.guess-list{display:grid;gap:10px}
+.guess-chip{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 12px;
+  background:rgba(255,255,255,.08);
+  border-radius:14px;
+}
+.guess-chip img{width:44px;height:44px;object-fit:contain;image-rendering:pixelated}
+.guess-chip-name{font-size:11px;line-height:1.6}
+
+.quote-box{
+  max-width:520px;
+  margin:0 auto 18px;
+  padding:22px 18px;
+  border-radius:20px;
+  background:rgba(255,255,255,.08);
+  border:4px solid rgba(255,255,255,.14);
+  text-align:center;
+  font-size:12px;
+  line-height:2;
+}
+.page-silhouette .silhouette-wrap{max-width:360px;margin:0 auto 16px}
+.page-flavor .silhouette-wrap,
+.page-classic .silhouette-wrap,
+.page-home .silhouette-wrap{max-width:320px;margin:0 auto 16px}
+/* Obraz w trybie sylwetki */
+.silhouette-frame{
+  width:100%;
+  aspect-ratio:1/1;
+  border-radius:14px;
+  overflow:hidden;
+  background:#f1f1f1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.silhouette-img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  image-rendering:pixelated;
+  transform:scale(2.9);
+  filter:brightness(0) contrast(1.2);
+  opacity:0;
+  transition:transform .25s ease, filter .25s ease, opacity .12s ease;
+}
+.silhouette-img.loaded{opacity:1}
+.zoom-note{text-align:center;margin-top:10px;font-size:11px;line-height:1.7}
+
+@keyframes fadeIn{
+  from{opacity:0;transform:translateY(6px)}
+  to{opacity:1;transform:none}
+}
+
+@media (max-width: 1200px){
+  .kalos-grid{--cols:10; grid-auto-rows:clamp(92px, 8vw, 122px)}
+}
+/* Ustawienia pod mniejsze ekrany */
+@media (max-width: 900px){
+  .kalos-grid{--cols:8; grid-auto-rows:clamp(88px, 10vw, 118px)}
+}
+@media (max-width: 680px){
+  .kalos-grid{--cols:5; grid-auto-rows:clamp(82px, 18vw, 112px)}
+  .sub-nav{gap:8px}
+}
+@media (max-width: 640px){
+  .page{padding:10px 8px 22px}
+  .panel,.hero{padding:16px 14px}
+  .hero h1,.big-title{font-size:28px}
+  .menu-title{font-size:18px}
+  .search-row{grid-template-columns:1fr 62px}
+  .search-input{height:56px;font-size:11px}
+  .board-head,.board-row{width:860px}
+}
+@media (max-width: 520px){
+  .kalos-grid{--cols:4; grid-auto-rows:clamp(76px, 22vw, 104px)}
+  .logo{font-size:54px; letter-spacing:-4px}
+  .logo-sub{font-size:10px}
+  .sub-link{min-width:120px;padding:10px 12px;font-size:10px}
+  .kalos-tile img{width:34px;height:34px}
+  .menu-strip{gap:10px;padding:8px}
+  .menu-icon{width:46px;height:46px;flex-basis:46px}
+  .menu-pill{font-size:10px;padding:12px}
+}

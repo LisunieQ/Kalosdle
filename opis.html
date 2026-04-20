@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<!-- Plik zrobiony prosto i czytelnie. Komentarze sa specjalnie krotkie. -->
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kalosdle — Opis</title>
+<link rel="stylesheet" href="styl.css">
+<link rel="icon" type="image/png" href="ikona.png">
+<link rel="shortcut icon" href="ikona.ico">
+</head>
+<!-- Tlo Pokedexu i glowna zawartosc strony -->
+<body class="page-flavor">
+<div class="kalos-bg"><div class="kalos-grid" id="kalos-grid"></div></div>
+<div class="page">
+
+<!-- Gorny naglowek strony -->
+<header class="simple-head">
+  <a class="logo" href="index.html">Kalosdle</a>
+  <div class="logo-sub">Pokédex Kalos</div>
+</header>
+
+<!-- Nawigacja do innych trybow -->
+<nav class="sub-nav">
+  <a class="sub-link" href="index.html">Menu</a>
+  <a class="sub-link" href="klasyczny.html">Klasyczny</a>
+  <a class="sub-link" href="sylwetka.html">Sylwetka</a>
+</nav>
+
+<section class="panel" style="max-width:760px; margin:0 auto;">
+  <div class="meta">Generacja 6 · Kalos</div>
+  <h1 class="big-title">Który Pokémon ma taki opis?</h1>
+  <div class="quote-box" id="quote-box">Ładowanie opisu…</div>
+
+  <!-- Pole wpisywania i podpowiedzi -->
+<div class="search-wrap">
+    <form class="search-row" id="guess-form" autocomplete="off">
+      <input class="search-input" id="guess-input" placeholder="Wpisz nazwę Pokémona">
+      <button class="search-btn" type="submit">▷</button>
+    </form>
+    <div class="suggest-box" id="suggest-box"></div>
+  </div>
+
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <div class="result-box" id="result-box" style="display:none">
+    <div class="answer-name" id="answer-name"></div>
+    <div class="answer-meta" id="answer-meta"></div>
+  </div>
+
+  <div class="guess-history hidden" id="guess-history">
+    <div class="guess-history-title">Wpisane wcześniej Pokémony</div>
+    <div class="guess-list" id="guess-list"></div>
+  </div>
+</section>
+
+<script>
+// Ten skrypt obsluguje wspolne rzeczy na stronie
+// Tutaj jest glowny adres do Pokemon API
+const API = 'https://pokeapi.co/api/v2';
+const $ = (id) => document.getElementById(id);
+const spriteUrl = (id) => 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/' + id + '.png';
+const artUrl = (id) => 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/' + id + '.png';
+const state = { names: [], cache: {}, target: '', targetData: null, guesses: [] };
+
+function cap(text){
+  return String(text || '').replace(/-/g,' ').replace(/\b\w/g, s => s.toUpperCase());
+}
+function clean(text){
+  return String(text || '').trim().toLowerCase().replace(/\s+/g,'-');
+}
+function day(offset=0){
+  const d = new Date();
+  d.setHours(0,0,0,0);
+  d.setDate(d.getDate()+offset);
+  return Math.floor(d.getTime()/86400000);
+}
+function key(mode){
+  return 'kalosdle_' + mode + '_' + day();
+}
+function save(mode){
+  return;
+}
+function load(mode){
+  return [];
+}
+function getId(url){
+  return Number(url.split('/').filter(Boolean).pop());
+}
+const TYPE_PL = {normal:'Normalny',fire:'Ogień',water:'Woda',electric:'Elektryczny',grass:'Trawa',ice:'Lód',fighting:'Walka',poison:'Trucizna',ground:'Ziemia',flying:'Latający',psychic:'Psychiczny',bug:'Robak',rock:'Kamień',ghost:'Duch',dragon:'Smok',dark:'Mrok',steel:'Stal',fairy:'Baśniowy'};
+const COLOR_PL = {black:'Czarny',blue:'Niebieski',brown:'Brązowy',gray:'Szary',green:'Zielony',pink:'Różowy',purple:'Fioletowy',red:'Czerwony',white:'Biały',yellow:'Żółty'};
+const evoCache = {};
+function plType(name){ return TYPE_PL[name] || cap(name || '—'); }
+function plColor(name){ return COLOR_PL[name] || cap(name || '—'); }
+function findEvolutionStage(node, target, stage=1){
+  if(!node) return 0;
+  if(node.species && node.species.name === target) return stage;
+  for(const next of (node.evolves_to || [])){
+    const found = findEvolutionStage(next, target, stage + 1);
+    if(found) return found;
+  }
+  return 0;
+}
+async function getEvolutionStage(species){
+  const chainUrl = species && species.evolution_chain && species.evolution_chain.url;
+  if(!chainUrl) return 1;
+  if(evoCache[chainUrl]) return evoCache[chainUrl][species.name] || 1;
+  const chainData = await fetch(chainUrl).then(r => r.json());
+  const names = {};
+  function walk(node, stage=1){
+    if(node && node.species) names[node.species.name] = Math.min(stage, 3);
+    for(const next of ((node && node.evolves_to) || [])) walk(next, stage + 1);
+  }
+  walk(chainData.chain, 1);
+  evoCache[chainUrl] = names;
+  return names[species.name] || 1;
+}
+async function translateToPolish(text){
+  const raw = String(text || 'Brak opisu.').replace(/[\n\f]+/g,' ').trim();
+  if(!raw) return 'Brak opisu.';
+  try{
+    const url = 'https://api.mymemory.translated.net/get?q=' + encodeURIComponent(raw) + '&langpair=en|pl';
+    const data = await fetch(url).then(r => r.json());
+    const translated = data && data.responseData && data.responseData.translatedText ? String(data.responseData.translatedText) : '';
+    if(translated){
+      return translated.replace(/&quot;/g,'\"').replace(/\s+/g,' ').trim();
+    }
+  }catch(e){}
+  return raw;
+}
+function setStatus(text, cls=''){
+  const el = $('status');
+  if(!el) return;
+  el.className = 'status ' + cls;
+  el.textContent = text;
+}
+function setupSettings(){
+  const btn = $('gear-btn');
+  const box = $('settings-box');
+  if(!btn || !box) return;
+  btn.onclick = () => box.classList.toggle('show');
+}
+async function getKalos(){
+  const data = await fetch(API + '/generation/6').then(r => r.json());
+  return data.pokemon_species
+    .sort((a,b) => getId(a.url) - getId(b.url))
+    .map(x => ({ name:x.name, id:getId(x.url) }));
+}
+// Rysowanie tla z kafelkami Pokemonow
+function buildWall(){
+  const grid = $('kalos-grid');
+  if(!grid) return;
+  grid.innerHTML = '';
+  const perRow = window.innerWidth <= 520 ? 4 : window.innerWidth <= 680 ? 5 : window.innerWidth <= 900 ? 8 : window.innerWidth <= 1100 ? 10 : 12;
+  const rowsByScreen = Math.ceil(window.innerHeight / 108) + 1;
+  const rowsByMons = Math.ceil(state.names.length / perRow);
+  const total = perRow * Math.max(rowsByScreen, rowsByMons);
+  for(let i = 0; i < total; i++){
+    const mon = state.names[i % state.names.length];
+    const tile = document.createElement('div');
+    tile.className = 'kalos-tile';
+    tile.innerHTML = '<div class="dex-no">#' + String(mon.id).padStart(3,'0') + '</div><img alt="" src="' + spriteUrl(mon.id) + '">';
+    grid.appendChild(tile);
+  }
+}
+window.addEventListener('resize', () => {
+  if(state.names && state.names.length) buildWall();
+});
+function pickRandomName(modeIndex){
+  const pool = state.names.filter((_, i) => i % 3 === modeIndex);
+  const list = pool.length ? pool : state.names;
+  return list[Math.floor(Math.random() * list.length)].name;
+}
+
+function habitatFrom(pokemon, species){
+  const types = pokemon.types.map(x => x.type.name);
+  if(species.is_legendary || species.is_mythical) return 'Rzadkie';
+  if(types.includes('water')) return 'Morze';
+  if(types.includes('flying') || types.includes('dragon')) return 'Góry';
+  if(types.includes('grass') || types.includes('bug')) return 'Las';
+  if(types.includes('ground') || types.includes('rock') || types.includes('steel')) return 'Jaskinie';
+  return 'Użytki zielone';
+}
+// Pobiera dane o konkretnym Pokemonie
+async function getDetails(name){
+  if(state.cache[name]) return state.cache[name];
+  const [pokemon, species] = await Promise.all([
+    fetch(API + '/pokemon/' + name).then(r => r.json()),
+    fetch(API + '/pokemon-species/' + name).then(r => r.json())
+  ]);
+  const englishFlavor = (species.flavor_text_entries || []).find(x => x.language.name === 'en') ||
+                        (species.flavor_text_entries || []).find(x => x.language.name === 'fr') ||
+                        (species.flavor_text_entries || [])[0] ||
+                        { flavor_text: 'Brak opisu.' };
+  const evolution = await getEvolutionStage(species);
+  const data = {
+    id: pokemon.id,
+    name: pokemon.name,
+    sprite: pokemon.sprites.front_default || spriteUrl(pokemon.id),
+    art: (pokemon.sprites.other && pokemon.sprites.other['official-artwork'] && pokemon.sprites.other['official-artwork'].front_default) || artUrl(pokemon.id),
+    type1: pokemon.types[0] ? pokemon.types[0].type.name : '',
+    type2: pokemon.types[1] ? pokemon.types[1].type.name : '',
+    color: species.color ? species.color.name : 'unknown',
+    height: pokemon.height / 10,
+    weight: pokemon.weight / 10,
+    habitat: habitatFrom(pokemon, species),
+    flavor: String(englishFlavor.flavor_text || 'Brak opisu.').replace(/[\n\f]+/g, ' '),
+    evolution,
+    legendary: species.is_legendary || species.is_mythical
+  };
+  state.cache[name] = data;
+  return data;
+}
+// Podpowiedzi w inpucie po wpisaniu litery
+function buildSuggestions(inputId, boxId, onPick){
+  const input = $(inputId);
+  const box = $(boxId);
+  function hide(){ box.classList.remove('show'); box.innerHTML=''; }
+  function render(){
+    const q = clean(input.value);
+    if(q.length < 1){ hide(); return; }
+    const hits = state.names.filter(mon => mon.name.startsWith(q)).slice(0, 12);
+    if(!hits.length){ hide(); return; }
+    box.innerHTML = '';
+    hits.forEach(mon => {
+      const row = document.createElement('div');
+      row.className = 'suggest-item';
+      row.innerHTML = '<img src="' + spriteUrl(mon.id) + '" alt="' + cap(mon.name) + '"><div class="name">' + cap(mon.name) + '</div>';
+      row.onclick = () => {
+        input.value = cap(mon.name);
+        hide();
+        if(onPick) onPick(mon.name);
+      };
+      box.appendChild(row);
+    });
+    box.classList.add('show');
+  }
+  input.addEventListener('input', render);
+  input.addEventListener('focus', render);
+  document.addEventListener('click', (e) => {
+    if(!box.contains(e.target) && e.target !== input) hide();
+  });
+}
+</script>
+
+<script>
+function renderGuessItem(name){
+  const list = $('guess-list');
+  const wrap = $('guess-history');
+  if(!list || !wrap) return;
+  wrap.classList.remove('hidden');
+  const data = state.cache[name];
+  const row = document.createElement('div');
+  row.className = 'guess-item';
+  row.innerHTML = '<img src="' + data.sprite + '" alt="' + cap(data.name) + '"><span>' + cap(data.name) + ' (#' + data.id + ')</span>';
+  list.appendChild(row);
+}
+async function submitGuess(e){
+  e.preventDefault();
+  const name = clean($('guess-input').value);
+  if(!name) return setStatus('Wpisz nazwę Pokémona.', 'bad');
+  if(!state.names.some(mon => mon.name === name)) return setStatus('To nie jest Pokémon z Kalos.', 'bad');
+  if(state.guesses.includes(name)) return setStatus('Ten Pokémon już był sprawdzany.', 'bad');
+
+  state.guesses.push(name);
+  save('flavor');
+  $('guess-input').value = '';
+  const data = await getDetails(name);
+  renderGuessItem(name);
+
+  if(name === state.target){
+    setStatus('Dobrze! To właściwy Pokémon.', 'ok');
+    $('result-box').style.display = 'block';
+    $('answer-name').textContent = cap(state.targetData.name) + ' (#' + state.targetData.id + ')';
+    $('answer-meta').textContent = plType(state.targetData.type1) + (state.targetData.type2 ? ' / ' + plType(state.targetData.type2) : '') + ' · ' + plColor(state.targetData.color) + ' · ewolucja ' + state.targetData.evolution;
+    $('guess-input').disabled = true;
+  }else{
+    setStatus('To nie ten Pokémon. Spróbuj jeszcze raz.', 'bad');
+  }
+}
+(async function(){
+  state.names = await getKalos();
+  buildWall();
+  state.target = pickRandomName(1);
+  state.targetData = await getDetails(state.target);
+  $('quote-box').textContent = 'Ładowanie polskiego opisu…';
+  const polishFlavor = await translateToPolish(state.targetData.flavor);
+  $('quote-box').textContent = '„' + polishFlavor + '”';
+  buildSuggestions('guess-input', 'suggest-box');
+  $('guess-form').addEventListener('submit', submitGuess);
+
+  state.guesses = load('flavor');
+  for(const guess of state.guesses){
+    await getDetails(guess);
+    renderGuessItem(guess);
+  }
+  if(state.guesses.includes(state.target)){
+    setStatus('Dzisiejsza gra jest już wygrana.', 'ok');
+    $('result-box').style.display = 'block';
+    $('answer-name').textContent = cap(state.targetData.name) + ' (#' + state.targetData.id + ')';
+    $('answer-meta').textContent = plType(state.targetData.type1) + (state.targetData.type2 ? ' / ' + plType(state.targetData.type2) : '') + ' · ' + plColor(state.targetData.color) + ' · ewolucja ' + state.targetData.evolution;
+    $('guess-input').disabled = true;
+  }
+})();
+</script>
+</body></html>
